@@ -1,0 +1,7 @@
+A quick sample of using Ehcache 2.4's new local transactions. These are valuable for keeping atomicity and providing rollback to caches in a non-jta world. They can also be controlled using JTA but this sample doesn't do that.
+
+you can build a kit for this project by typing
+
+mvn clean assembly:assembly
+
+
