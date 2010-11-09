@@ -75,7 +75,7 @@ public class LocalTransactionSample {
 		e = cache1.get(1);
 		state = ((Person) e.getValue()).getAddress().getState();
 		((Person) e.getValue()).getAddress().setState("PA");
-		cache1.put(new Element(e.getKey(), e.getValue()));
+		cache1.put(e);
 		transactionManager.rollback();
 
 		transactionManager.begin();
@@ -100,7 +100,7 @@ public class LocalTransactionSample {
 		e = cache1.get(1);
 		state = ((Person) e.getValue()).getAddress().getState();
 		((Person) e.getValue()).getAddress().setState("NJ");
-		cache1.put(new Element(e.getKey(), e.getValue()));
+		cache1.put(e);
 		e = cache2.get("Steve Morris");
 		cache2.put(new Element("Steve Morris", 36));
 		transactionManager.rollback();
@@ -130,7 +130,7 @@ public class LocalTransactionSample {
 		e = cache1.get(1);
 		state = ((Person) e.getValue()).getAddress().getState();
 		((Person) e.getValue()).getAddress().setState("PA");
-		cache1.put(new Element(e.getKey(), e.getValue()));
+		cache1.put(e);
 		e = cache2.get("Steve Morris");
 		cache2.put(new Element("Steve Morris", 33));
 		transactionManager.commit();
