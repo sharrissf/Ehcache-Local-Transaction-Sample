@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.sharrissf.ehcache.sample</groupId>
   <artifactId>ehcache-local-transaction-sample</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
   <name>Ehcache Local Transaction Sample</name>
   <description>Ehcache Local transactions allow for atomic operations and rollback across caches
   </description>
