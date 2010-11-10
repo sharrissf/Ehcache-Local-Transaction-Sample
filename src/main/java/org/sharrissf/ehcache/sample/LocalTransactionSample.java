@@ -1,5 +1,9 @@
 package org.sharrissf.ehcache.sample;
 
+/**
+ * Sample showing the usage of local transactions directly from Ehcache
+ * 
+ */
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
@@ -44,26 +48,37 @@ public class LocalTransactionSample {
 		System.out
 				.println("\nTransactionally adding a person to cache1 and cache2 and rolling back");
 		transactionManager.begin();
-		cache1.put(new Element(4, new Person("Julie shmo", 33, Gender.FEMALE,
-				"berry", "Lakeville", "NJ")));
+		try {
+			cache1.put(new Element(4, new Person("Julie shmo", 33,
+					Gender.FEMALE, "berry", "Lakeville", "NJ")));
 
-		cache2.put(new Element("Julie shmo", 4));
-		transactionManager.rollback();
-		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
-				+ getCache2Size());
+			cache2.put(new Element("Julie shmo", 4));
+		} finally {
+			transactionManager.rollback();
+			System.out.println("Cache1 size: " + getCache1Size()
+					+ " Cache2 size: " + getCache2Size());
+		}
 	}
 
 	private void showMultiCacheAddAndCommit() {
+		boolean completed = false;
 		System.out
 				.println("\nTransactionally adding a person to cache1 and cache2");
 		transactionManager.begin();
-		cache1.put(new Element(3, new Person("Steve morris", 13, Gender.FEMALE,
-				"King", "Parisippany", "NJ")));
+		try {
+			cache1.put(new Element(3, new Person("Steve morris", 13,
+					Gender.FEMALE, "King", "Parisippany", "NJ")));
 
-		cache2.put(new Element("Steve Morris", 3));
-		transactionManager.commit();
-		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
-				+ getCache2Size());
+			cache2.put(new Element("Steve Morris", 3));
+			completed = true;
+		} finally {
+			if (completed)
+				transactionManager.commit();
+			else
+				transactionManager.rollback();
+			System.out.println("Cache1 size: " + getCache1Size()
+					+ " Cache2 size: " + getCache2Size());
+		}
 	}
 
 	private void showSingleCacheUpdateAndRollback() {
@@ -72,23 +87,28 @@ public class LocalTransactionSample {
 		System.out
 				.println("\nTransactionally updating a person to cache1 then rollback");
 		transactionManager.begin();
-		e = cache1.get(1);
-		state = ((Person) e.getValue()).getAddress().getState();
-		((Person) e.getValue()).getAddress().setState("PA");
-		cache1.put(e);
-		transactionManager.rollback();
+		try {
+			e = cache1.get(1);
+			state = ((Person) e.getValue()).getAddress().getState();
+			((Person) e.getValue()).getAddress().setState("PA");
+			cache1.put(e);
+		} finally {
+			transactionManager.rollback();
+		}
 
 		transactionManager.begin();
-
-		System.out
-				.println("Rolled back so state should stay the same for person 1 from: "
-						+ state
-						+ " to: "
-						+ ((Person) cache1.get(1).getValue()).getAddress()
-								.getState());
-		transactionManager.commit();
-		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
-				+ getCache2Size());
+		try {
+			System.out
+					.println("Rolled back so state should stay the same for person 1 from: "
+							+ state
+							+ " to: "
+							+ ((Person) cache1.get(1).getValue()).getAddress()
+									.getState());
+		} finally {
+			transactionManager.commit();
+			System.out.println("Cache1 size: " + getCache1Size()
+					+ " Cache2 size: " + getCache2Size());
+		}
 	}
 
 	private void showMultiCacheUpdateAndRollback() {
@@ -97,26 +117,31 @@ public class LocalTransactionSample {
 		System.out
 				.println("\nTransactionally updating a person to cache1 and cache 2 then rollback");
 		transactionManager.begin();
-		e = cache1.get(1);
-		state = ((Person) e.getValue()).getAddress().getState();
-		((Person) e.getValue()).getAddress().setState("NJ");
-		cache1.put(e);
-		e = cache2.get("Steve Morris");
-		cache2.put(new Element("Steve Morris", 36));
-		transactionManager.rollback();
-
+		try {
+			e = cache1.get(1);
+			state = ((Person) e.getValue()).getAddress().getState();
+			((Person) e.getValue()).getAddress().setState("NJ");
+			cache1.put(e);
+			e = cache2.get("Steve Morris");
+			cache2.put(new Element("Steve Morris", 36));
+		} finally {
+			transactionManager.rollback();
+		}
 		transactionManager.begin();
-
-		System.out
-				.println("Rolled back so state should stay the same for person 1 from: "
-						+ state
-						+ " to: "
-						+ ((Person) cache1.get(1).getValue()).getAddress()
-								.getState()
-						+ " cache2 id was: "
-						+ e.getValue()
-						+ " Now is: " + cache2.get("Steve Morris").getValue());
-		transactionManager.commit();
+		try {
+			System.out
+					.println("Rolled back so state should stay the same for person 1 from: "
+							+ state
+							+ " to: "
+							+ ((Person) cache1.get(1).getValue()).getAddress()
+									.getState()
+							+ " cache2 id was: "
+							+ e.getValue()
+							+ " Now is: "
+							+ cache2.get("Steve Morris").getValue());
+		} finally {
+			transactionManager.commit();
+		}
 		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
 				+ getCache2Size());
 	}
@@ -124,43 +149,68 @@ public class LocalTransactionSample {
 	private void showMultiCacheUpdateAndCommit() {
 		Element e;
 		String state;
+		boolean complete = false;
 		System.out
 				.println("\nTransactionally updating a person to cache1 and cache 2 then commit");
 		transactionManager.begin();
-		e = cache1.get(1);
-		state = ((Person) e.getValue()).getAddress().getState();
-		((Person) e.getValue()).getAddress().setState("PA");
-		cache1.put(e);
-		e = cache2.get("Steve Morris");
-		cache2.put(new Element("Steve Morris", 33));
-		transactionManager.commit();
-
+		try {
+			e = cache1.get(1);
+			state = ((Person) e.getValue()).getAddress().getState();
+			((Person) e.getValue()).getAddress().setState("PA");
+			cache1.put(e);
+			e = cache2.get("Steve Morris");
+			cache2.put(new Element("Steve Morris", 33));
+			complete = true;
+		} finally {
+			if (complete)
+				transactionManager.commit();
+			else
+				transactionManager.rollback();
+		}
 		transactionManager.begin();
-
-		System.out.println("Commit so state should update from: " + state
-				+ " to: "
-				+ ((Person) cache1.get(1).getValue()).getAddress().getState()
-				+ " cache2 id was: " + e.getValue() + " Now is: "
-				+ cache2.get("Steve Morris").getValue());
-		transactionManager.commit();
-		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
-				+ getCache2Size());
+		try {
+			System.out.println("Commit so state should update from: "
+					+ state
+					+ " to: "
+					+ ((Person) cache1.get(1).getValue()).getAddress()
+							.getState() + " cache2 id was: " + e.getValue()
+					+ " Now is: " + cache2.get("Steve Morris").getValue());
+		} finally {
+			transactionManager.commit();
+			System.out.println("Cache1 size: " + getCache1Size()
+					+ " Cache2 size: " + getCache2Size());
+		}
 	}
 
 	private void showSingleCacheUpdateAndCommit() {
+		boolean complete = false;
+		Element e;
+		String state;
 		System.out
 				.println("\nTransactionally updating a person to cache1 then commit");
 		transactionManager.begin();
-		Element e = cache1.get(1);
-		String state = ((Person) e.getValue()).getAddress().getState();
-		((Person) e.getValue()).getAddress().setState("WI");
-		cache1.put(e);
-		transactionManager.commit();
-		transactionManager.begin();
 
-		System.out.println("Changed state for person 1 from: " + state
-				+ " to: " + ((Person) e.getValue()).getAddress().getState());
-		transactionManager.commit();
+		try {
+			e = cache1.get(1);
+			state = ((Person) e.getValue()).getAddress().getState();
+			((Person) e.getValue()).getAddress().setState("WI");
+			cache1.put(e);
+			complete = true;
+		} finally {
+			if (complete)
+				transactionManager.commit();
+			else
+				transactionManager.rollback();
+		}
+		transactionManager.begin();
+		try {
+			System.out
+					.println("Changed state for person 1 from: " + state
+							+ " to: "
+							+ ((Person) e.getValue()).getAddress().getState());
+		} finally {
+			transactionManager.commit();
+		}
 		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
 				+ getCache2Size());
 	}
@@ -169,9 +219,12 @@ public class LocalTransactionSample {
 		System.out
 				.println("\nTransactionally adding a person to cache1 then rollback");
 		transactionManager.begin();
-		cache1.put(new Element(2, new Person("Joe Harris", 34, Gender.MALE,
-				"brannan", "SF", "CA")));
-		transactionManager.rollback();
+		try {
+			cache1.put(new Element(2, new Person("Joe Harris", 34, Gender.MALE,
+					"brannan", "SF", "CA")));
+		} finally {
+			transactionManager.rollback();
+		}
 		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
 				+ getCache2Size());
 	}
@@ -179,16 +232,24 @@ public class LocalTransactionSample {
 	private void showSingleCacheAddAndCommit() {
 		System.out.println("Transactionally adding a person to cache1");
 		transactionManager.begin();
-		cache1.put(new Element(1, new Person("Steve Harris", 88, Gender.MALE,
-				"4th st", "Lombard", "CA")));
-		transactionManager.commit();
+		boolean complete = false;
+		try {
+			cache1.put(new Element(1, new Person("Steve Harris", 88,
+					Gender.MALE, "4th st", "Lombard", "CA")));
+			complete = true;
+		} finally {
+			if (complete)
+				transactionManager.commit();
+			else
+				transactionManager.rollback();
+		}
 		System.out.println("Cache1 size: " + getCache1Size() + " Cache2 size: "
 				+ getCache2Size());
 	}
 
 	private int getCache1Size() {
+		transactionManager.begin();
 		try {
-			transactionManager.begin();
 			return cache1.getSize();
 		} finally {
 			transactionManager.commit();
@@ -196,8 +257,8 @@ public class LocalTransactionSample {
 	}
 
 	private int getCache2Size() {
+		transactionManager.begin();
 		try {
-			transactionManager.begin();
 			return cache2.getSize();
 		} finally {
 			transactionManager.commit();
